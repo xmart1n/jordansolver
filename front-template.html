@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>жордан мейстер</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        button {
+            padding: 8px 15px;
+            margin: 0 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        button#less {
+            background-color: #f44336;
+        }
+        
+        button#less:hover {
+            background-color: #d32f2f;
+        }
+        
+        table {
+            border-collapse: collapse;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        td {
+            border: 1px solid #ddd;
+            padding: 5px;
+        }
+        
+        input {
+            width: 40px;
+            height: 30px;
+            text-align: center;
+            border: none;
+            font-size: 14px;
+        }
+        
+        input:focus {
+            outline: 2px solid #4CAF50;
+        }
+        
+        .size-info {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .result-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .result-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .result-matrix {
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #4CAF50;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .error {
+            color: #f44336;
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .success {
+            color: #4CAF50;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; color: #333;">жордан мейстер</h1>
+    
+    <div class="controls">
+        <button id="more">+</button>
+        <button id="less">-</button>
+    </div>
+    
+    <div class="size-info" id="size-info">матрица 2×2</div>
+    
+    <div id="matrix-container">
+        <table id="matrix"></table>
+    </div>
+    
+    <div style="text-align: center; margin-top: 15px;">
+        <button id="jordan">Вычислить жорданову форму</button>
+    </div>
+    
+    <div class="loading" id="loading">Вычисление...</div>
+    
+    <div class="result-section" id="result-section" style="display: none;">
+        <div class="result-title" id="result-title">Результат:</div>
+        <div class="result-matrix" id="result-matrix"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const matrix = document.getElementById('matrix');
+            const sizeInfo = document.getElementById('size-info');
+            const loading = document.getElementById('loading');
+            const resultSection = document.getElementById('result-section');
+            const resultTitle = document.getElementById('result-title');
+            const resultMatrix = document.getElementById('result-matrix');
+            
+            let size = 2; 
+            createMatrix(size);
+
+            document.getElementById('more').addEventListener('click', function() {
+                if (size < 8) { 
+                    size++;
+                    createMatrix(size);
+                }
+            });
+            
+            document.getElementById('less').addEventListener('click', function() {
+                if (size > 1) { 
+                    size--;
+                    createMatrix(size);
+                }
+            });
+            
+            function createMatrix(size) {
+                matrix.innerHTML = '';
+                sizeInfo.textContent = `${size}×${size} Matrix`;
+                
+                for (let i = 0; i < size; i++) {
+                    const row = document.createElement('tr');
+                    
+                    for (let j = 0; j < size; j++) {
+                        const cell = document.createElement('td');
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.name = `cell_${i}_${j}`;
+                        input.placeholder = '0';
+                        input.value = getStoredValue(i, j) || '';
+                        
+                        input.addEventListener('input', function() {
+                            storeValue(i, j, this.value);
+                        });
+                        
+                        cell.appendChild(input);
+                        row.appendChild(cell);
+                    }
+                    
+                    matrix.appendChild(row);
+                }
+                
+                // Hide results when matrix changes
+                resultSection.style.display = 'none';
+            }
+            
+            function storeValue(row, col, value) {
+                const key = `matrix_${row}_${col}`;
+                try {
+                    localStorage.setItem(key, value);
+                } catch(e) {
+                    console.error('Local storage error:', e);
+                }
+            }
+            
+            function getStoredValue(row, col) {
+                const key = `matrix_${row}_${col}`;
+                try {
+                    return localStorage.getItem(key);
+                } catch(e) {
+                    return null;
+                }
+            }
+            
+            function getMatrixData() {
+                const matrixData = {
+                    size: size,
+                    values: []
+                };
+                
+                for (let i = 0; i < size; i++) {
+                    matrixData.values[i] = [];
+                    for (let j = 0; j < size; j++) {
+                        const input = document.querySelector(`input[name="cell_${i}_${j}"]`);
+                        // Convert to number or use 0 if empty/invalid
+                        const value = input.value.trim() === '' ? 0 : parseFloat(input.value) || 0;
+                        matrixData.values[i][j] = value;
+                    }
+                }
+                
+                return matrixData;
+            }
+            
+            function displayResult(matrixValues, title) {
+                resultTitle.textContent = title;
+                resultMatrix.innerHTML = '';
+                
+                const table = document.createElement('table');
+                for (let i = 0; i < matrixValues.length; i++) {
+                    const row = document.createElement('tr');
+                    
+                    for (let j = 0; j < matrixValues[i].length; j++) {
+                        const cell = document.createElement('td');
+                        const value = matrixValues[i][j];
+                        
+                        // Format the number to avoid too many decimal places
+                        const formattedValue = Number.isInteger(value) ? 
+                            value.toString() : value.toFixed(4);
+                        
+                        cell.textContent = formattedValue;
+                        row.appendChild(cell);
+                    }
+                    
+                    table.appendChild(row);
+                }
+                
+                resultMatrix.appendChild(table);
+                resultSection.style.display = 'block';
+            }
+            
+            function showError(message) {
+                resultTitle.textContent = 'Ошибка';
+                resultMatrix.innerHTML = `<div class="error">${message}</div>`;
+                resultSection.style.display = 'block';
+            }
+            
+            function showSuccess(message) {
+                resultMatrix.innerHTML = `<div class="success">${message}</div>`;
+                resultSection.style.display = 'block';
+            }
+            
+            // Jordan form calculation
+            document.getElementById("jordan").addEventListener("click", function() {
+                const matrixData = getMatrixData();
+                
+                loading.style.display = 'block';
+                resultSection.style.display = 'none';
+                
+                fetch("/calculate", {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(matrixData)
+                })
+                .then(response => {
+                    loading.style.display = 'none';
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        showError(data.error);
+                    } else {
+                        displayResult(data.jordanForm, "Жорданова форма:");
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    showError(`Ошибка при вычислении: ${error.message}`);
+                    console.error('Error:', error);
+                });
+            });
+            
+            // Inverse matrix calculation
+        });
+    </script>
+</body>
+</html>
