@@ -14,7 +14,6 @@ def searching_Jordan_cell_vectors(base_mx: np.ndarray, target):
     vectors_count = 0
     proper_values = [[]]
     gluing_values = []
-
     printable = []
 
     while 1:
@@ -27,13 +26,13 @@ def searching_Jordan_cell_vectors(base_mx: np.ndarray, target):
 
         for v in pv:
             v = [vv.p for vv in v]
-            vectors_set = sum(proper_values, []) + [v]
+            vectors_set = gluing_values + [v]
             matrix = np.array(vectors_set, dtype=np.int32)
 
             if np.linalg.matrix_rank(matrix) == matrix.shape[0]:
                 proper_values[-1] += [v]
-                gluing_values += [v]
                 printable[-1]["vectors"] += [v]
+                gluing_values += [v]
                 vectors_count += 1
                 if target == vectors_count:
                     break
