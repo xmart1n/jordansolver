@@ -3,7 +3,7 @@ import sympy as sp
 
 import pprint
 
-"""
+
 MX = [
     [0, 1, 0, 0],
     [-1, 2, 0, 0],
@@ -20,7 +20,7 @@ MX = [
     [1, 1, 0, 0, 1],
     [0, -1, 0, 0, 0],
 ]
-
+"""
 
 def to_list(mx) -> list:
     # Преобразует в список
@@ -120,7 +120,7 @@ def generate_transactions(ladder):
 
 def check(a, p, j):
     # p^-1 * a * p
-    p = np.array(p, dtype=np.int32)
+    p = np.array(p, dtype=np.int32).T
     p_inv = np.linalg.inv(p)
     j_test = (p_inv @ a @ p).astype(np.int32)
     return np.all(j_test == j)
@@ -162,13 +162,13 @@ class Solver:
             self.mx_datapack["eigenvalues"].append(ev_data)
             handmade_transition_matrix += ev_data["transition_matrix"]
 
+
         P, J = mx_sp.jordan_form()
         self.mx_datapack["eigenvalues_count"] = len(eigvecs)
         self.mx_datapack["jordan_matrix"] = to_list(J)
         self.mx_datapack["transition_matrix"] = to_list(P)
-        self.mx_datapack["handmade_transition_matrix"] = handmade_transition_matrix
-
-        check(self.matrix, handmade_transition_matrix, to_list(J))
+        self.mx_datapack["handmade_transition_matrix"] = (np.array(handmade_transition_matrix, dtype=np.int32).T).tolist()
+        self.mx_datapack["http"] = int(check(self.matrix, handmade_transition_matrix, to_list(J)))
 
         return self.mx_datapack
 
