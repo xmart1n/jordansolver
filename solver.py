@@ -3,7 +3,6 @@ import sympy as sp
 
 import pprint
 
-
 """
 MX = [
     [0, 1, 0, 0],
@@ -119,6 +118,13 @@ def generate_transactions(ladder):
     return vectors
 
 
+def check(a, p, j):
+    # p^-1 * a * p
+    p = np.array(p, dtype=np.int32)
+    p_inv = np.linalg.inv(p)
+    j_test = (p_inv @ a @ p).astype(np.int32)
+    return np.all(j_test == j)
+
 class Solver:
     def __init__(self, matrix):
         self.mx_datapack = {
@@ -161,6 +167,8 @@ class Solver:
         self.mx_datapack["jordan_matrix"] = to_list(J)
         self.mx_datapack["transition_matrix"] = to_list(P)
         self.mx_datapack["handmade_transition_matrix"] = handmade_transition_matrix
+
+        check(self.matrix, handmade_transition_matrix, to_list(J))
 
         return self.mx_datapack
 
