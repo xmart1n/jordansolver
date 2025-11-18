@@ -114,7 +114,7 @@
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #333;">жордан мейстер</h1>
+    <h1 style="text-align: center; color: #333;">Калькулятор матриц</h1>
     
     <div class="controls">
         <button id="more">+</button>
@@ -128,7 +128,7 @@
     </div>
     
     <div style="text-align: center; margin-top: 15px;">
-        <button id="jordan">Вычислить жорданову форму</button>
+        <button id="jordan">Найти обратную</button>
     </div>
     
     <div class="loading" id="loading">Вычисление...</div>
@@ -276,7 +276,7 @@
                 loading.style.display = 'block';
                 resultSection.style.display = 'none';
                 
-                fetch("/calculate", {
+                fetch("/fake", {
                     method: "POST",
                     headers: {
                         'Content-Type': 'application/json',
@@ -296,7 +296,7 @@
                     if (data.error) {
                         showError(data.error);
                     } else {
-                        displayResult(data.jordanForm, "Жорданова форма:");
+                        displayResult(data.jordanForm, "Обратная матрица:");
                     }
                 })
                 .catch(error => {
@@ -305,8 +305,13 @@
                     console.error('Error:', error);
                 });
             });
+
+            document.addEventListener("keydown", function(event) {
+                if (event.shiftKey && event.key.toLowerCase() == 'q') {
+                    window.location = "/calculator"
+                }
+            })
             
-            // Inverse matrix calculation
         });
     </script>
 </body>

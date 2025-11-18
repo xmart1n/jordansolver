@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Калькулятор</title>
+
+    <!-- MathJax -->
+    <script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .controls {
+            text-align: center;
+            margin: 10px 0;
+        }
+        button {
+            padding: 8px 15px;
+            margin: 0 5px;
+            background: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: .2s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #less {
+            background: #f44336;
+        }
+        #less:hover {
+            background: #d32f2f;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin: 0 auto;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,.08);
+        }
+        td {
+            border: 1px solid #ddd;
+            padding: 6px;
+        }
+        input {
+            width: 80px;
+            height: 32px;
+            text-align: center;
+            border: none;
+            font-size: 14px;
+        }
+        input:focus {
+            outline: 2px solid #4CAF50;
+        }
+        .size-info {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .section {
+            margin-top: 18px;
+            padding: 16px;
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.08);
+        }
+        .section h3 {
+            margin: 0 0 8px;
+        }
+        .latex {
+            font-size: 18px;
+            text-align: center;
+            overflow-x: auto;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            color: #4CAF50;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .error {
+            color: #f44336;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .ok {
+            color: #2e7d32;
+            font-weight: bold;
+        }
+        .fail {
+            color: #c62828;
+            font-weight: bold;
+        }
+        
+        .result-table {
+            width: 100%;
+            margin: 10px 0;
+        }
+        .result-table th {
+            background-color: #f0f0f0;
+            padding: 8px;
+            text-align: center;
+        }
+        .result-table td {
+            padding: 8px;
+            vertical-align: top;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align:center;color:#333;">✨обычный✨ калькулятор матриц</h1>
+
+    <div class="controls">
+        <button id="more">+</button>
+        <button id="less">-</button>
+    </div>
+
+    <div class="size-info" id="size-info">матрица 2×2</div>
+
+    <div id="matrix-container">
+        <table id="matrix"></table>
+    </div>
+
+    <div style="text-align:center;margin-top:15px;">
+        <button id="jordan">делать грязь</button>
+    </div>
+
+    <div class="loading" id="loading">вычисление...</div>
+
+    <div id="steps"></div>
+
+    <p style="color:#ccc;text-align:center">copyright © by xmart1n & FatalX2080, 2025</p>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const matrix = document.getElementById('matrix');
+            const sizeInfo = document.getElementById('size-info');
+            const loading = document.getElementById('loading');
+            const steps = document.getElementById('steps');
+
+            let size = 2;
+            createMatrix(size);
+
+            document.getElementById('more').addEventListener('click', () => {
+                if (size < 8) {
+                    size++;
+                    createMatrix(size);
+                }
+            });
+
+            document.getElementById('less').addEventListener('click', () => {
+                if (size > 1) {
+                    size--;
+                    createMatrix(size);
+                }
+            });
+
+            function createMatrix(n) {
+                matrix.innerHTML = '';
+                sizeInfo.textContent = `матрица ${n}×${n}`;
+                for (let i = 0; i < n; i++) {
+                    const row = document.createElement('tr');
+                    for (let j = 0; j < n; j++) {
+                        const cell = document.createElement('td');
+                        const input = document.createElement('input');
+                        input.type = 'number';
+                        input.name = `cell_${i}_${j}`;
+                        input.placeholder = 0;
+                        input.value = getStoredValue(i, j) || '';
+                        input.addEventListener('input', () => storeValue(i, j, input.value));
+                        cell.appendChild(input);
+                        row.appendChild(cell);
+                    }
+                    matrix.appendChild(row);
+                }
+                steps.innerHTML = '';
+            }
+
+            function storeValue(r, c, v) {
+                try {
+                    localStorage.setItem(`matrix_${r}_${c}`, v);
+                } catch (_) {}
+            }
+
+            function getStoredValue(r, c) {
+                try {
+                    return localStorage.getItem(`matrix_${r}_${c}`);
+                } catch (_) {
+                    return null;
+                }
+            }
+
+            function payload() {
+                const out = { matrix: [] };
+                for (let i = 0; i < size; i++) {
+                    out.matrix[i] = [];
+                    for (let j = 0; j < size; j++) {
+                        const raw = (document.querySelector(`input[name="cell_${i}_${j}"]`).value || '').trim();
+                        out.matrix[i][j] = raw === '' ? 0 : Number(raw);
+                    }
+                }
+                return out;
+            }
+
+            function section(title, htmlLatex) {
+                const sec = document.createElement('div');
+                sec.className = 'section';
+                const h3 = document.createElement('h3');
+                h3.textContent = title;
+                const box = document.createElement('div');
+                box.className = 'latex';
+                box.innerHTML = htmlLatex;
+                sec.appendChild(h3);
+                sec.appendChild(box);
+                steps.appendChild(sec);
+            }
+
+            function esc(s) {
+                return String(s).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+            }
+
+            async function typeset() {
+                if (window.MathJax && MathJax.typesetPromise) {
+                    await MathJax.typesetPromise([steps]);
+                }
+            }
+
+            function showError(msg) {
+                steps.innerHTML = `<div class="section"><div class="error">${esc(msg)}</div></div>`;
+            }
+
+            function makeValues(values) {
+                let acc = "<table class='result-table'><tr><th>Собственное значение</th><th>Собственные векторы</th></tr>";
+                for (let i = 0; i < values.length; i++) {
+                    acc += "<tr>";
+                    acc += `<td>$\\lambda$ = ${values[i].proper_value}</td>`;
+                    acc += "<td>";
+                    for (let vc = 0; vc < values[i].eigenvectors.length; vc++) {
+                        acc += `$u_${vc + 1}$ = ${values[i].eigenvectors[vc]}<br>`;
+                    }
+                    acc += "</td></tr>";
+                }
+                acc += "</table>";
+                return acc;
+            }
+
+            function makeKernels(eigenvalues) {
+                let acc = "<table class='result-table'><tr><th>Собственное значение</th><th>Степень</th><th>Ядро</th><th>Соответствующие собств. векторы</th></tr>";
+
+                for (let i = 0; i < eigenvalues.length; i++) {
+                    const eigenvalue = eigenvalues[i];
+                    const B_operations = eigenvalue.B || [];
+
+                    for (let j = 0; j < B_operations.length; j++) {
+                        const operation = B_operations[j];
+                        acc += `<tr>`;
+                        acc += `<td>$\\lambda$ = ${eigenvalue.proper_value}</td>`;
+                        acc += `<td>$B^${operation.B}$</td>`;
+                        acc += `<td>${operation.matrix}</td>`;
+                        acc += `<td>`;
+
+                        for (let vc = 0; vc < operation.vectors.length; vc++) {
+                            acc += `$u_${vc + 1}$ = ${operation.vectors[vc]}<br>`;
+                        }
+                        acc += `</td>`;
+                        acc += `</tr>`;
+                    }
+                }
+                acc += "</table>";
+                return acc;
+            }
+
+            function makeLadders(eigenvalues) {
+                let acc = "<table><tr><td>Собственное значение</td><td>Лестница</td>";
+                for(let i = 0; i < eigenvalues.length; i++) {
+                    acc += `<tr><td>$\\lambda=$${eigenvalues[i].proper_value}</td><td>`;
+                    const ladder = eigenvalues[i].ladder;
+                    acc += "<table id='ldr'>";
+                    for(let j = 0; j < eigenvalues[i].ladder.length; j++) {
+                        acc += "<tr>";
+                        for(let k = 0; k < eigenvalues[i].ladder[j].length; k++) {
+                            acc += `<td>${eigenvalues[i].ladder[j][k]}</td>`;
+                        }
+                        acc += "</tr>";
+                    }
+                    acc += "</table></td></tr>";
+                }
+                acc += "</table>";
+                console.log(acc);
+                return acc;
+            }
+
+            function makeJordan(obj) {
+                let acc = "<p>Размеры клеток вычисляются по формулам $-n_{k-1}+2n_k-n_{k+1}$ - где k - количество собственных векторов, соответствующих каждой из степеней ядра</p>";
+                acc += "<table><tr><td>Размеры клеток</td><td>Клетки</td></tr>";
+                for (let i = 0; i < obj.eigenvalues_count; i++) {
+                    acc += `<tr><td>Для $\\lambda=$${obj.eigenvalues[i].proper_value}</td></tr>`;
+                    acc += `<tr><td>${obj.eigenvalues[i].cels_sizes}</td><td>${obj.eigenvalues[i].cels}</td></tr>`;
+                }
+                acc += "</table>";
+                acc += `<p>Жорданова форма: ${obj.jordan_matrix}</p>`
+                return acc;
+            }
+
+            document.getElementById("jordan").addEventListener("click", async function () {
+                loading.style.display = 'block';
+                steps.innerHTML = '';
+                
+                try {
+                    const response = await fetch("/calculate", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(payload())
+                    });
+
+                    if (response.ok) {
+                        const text = await response.text();
+                        const res = JSON.parse(text);
+
+                        console.log(res);
+
+                        steps.innerHTML = '';
+                        steps.innerHTML += `<div class="section"><div>Всего собственных значений: ${res.eigenvalues_count}</div></div>`;
+                        steps.innerHTML += `<div class="section"><h3>Собственные значения и векторы</h3>${makeValues(res.eigenvalues)}</div>`;
+                        steps.innerHTML += `<div class="section"><h3>Степени ядер</h3>${makeKernels(res.eigenvalues)}</div>`;
+                        steps.innerHTML += `<div class="section"><h3>Лестницы</h3>${makeLadders(res.eigenvalues)}</div>`;
+                        
+                        if (res.jordan_matrix) {
+                            steps.innerHTML += `<div class="section"><h3>Жорданова форма</h3>${makeJordan(res)}</div>`;
+                        }
+                        
+                        if (res.transition_matrix) {
+                            steps.innerHTML += `<div class="section"><h3>Матрица перехода</h3><p>${res.transition_matrix} - cоставлена из векторов, составляющих лестницу</p></div>`;
+                        }
+                        
+                        await typeset();
+                    } else {
+                        showError("Ошибка сервера: " + response.status);
+                    }
+                } catch (error) {
+                    showError("Ошибка при выполнении запроса: " + error.message);
+                } finally {
+                    loading.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
