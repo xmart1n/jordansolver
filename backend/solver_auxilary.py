@@ -3,9 +3,6 @@ import sympy as sp
 import itertools
 
 
-def to_list(mx: np.ndarray) -> list:
-    return [[int(j) for j in i] for i in mx.tolist()]  # Преобразует в список
-
 
 def searching_Jordan_cell_vectors(base_mx: np.ndarray, target):
     b_pow = 1
@@ -28,8 +25,7 @@ def searching_Jordan_cell_vectors(base_mx: np.ndarray, target):
         )
 
         for v in pv:
-            v = [vv.p for vv in v]
-            vectors_set = gluing_values + [v]
+            vectors_set = gluing_values + [[vv.p for vv in v]]
             matrix = np.array(vectors_set, dtype=np.int32)
 
             if np.linalg.matrix_rank(matrix) == matrix.shape[0]:
@@ -104,9 +100,8 @@ def generate_ladder(b, label_vectors):
                 )
                 lower_ladder(i, j, b, l)
 
-    ld = [[[int(v) for v in j] for j in i] for i in l]
     pld = [[jlatex(j) for j in i] for i in l[::-1]]
-    return ld, tuple(pld)
+    return l, tuple(pld)
 
 
 def generate_transactions(ladder):
@@ -128,7 +123,7 @@ def check(a, p, j):
     p = np.array(p, dtype=np.int32).T
     p_inv = np.linalg.inv(p)
     j_test = (p_inv @ a @ p).astype(np.int32)
-    return np.allclose(j_test, j)
+    return np.allclose(j_test, np.array(j, dtype=np.int32))
 
 
 def jlatex(obj):
@@ -147,4 +142,3 @@ def generate_cels(proper_value, cels_sizes):
         res.append(jlatex(sp.Matrix(mx)))
 
     return res
-

@@ -12,11 +12,13 @@ def hello():
 
 @app.post("/calculate")
 def calc():
-    matrix = request.json["matrix"]
-    inst = solver.Solver()
-    inst.process(matrix)
-    return inst.get_datapack()
-
+    try:
+        matrix = request.json["matrix"]
+        inst = solver.Solver()
+        inst.process(matrix)
+        return inst.get_datapack()
+    except:
+        return render_template("index.html")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

@@ -88,7 +88,7 @@ class Solver:
             sp.Matrix(np.array(handmade_transition_matrix, dtype=np.int32).T.tolist())
         )
         accuracy_of_calculations = check(
-            self.matrix, handmade_transition_matrix, to_list(J)
+            self.matrix, handmade_transition_matrix, J
         )
 
         self.mx_datapack["eigenvalues_count"] = len(eigvecs)
@@ -97,7 +97,7 @@ class Solver:
         self.mx_datapack["handmade_transition_matrix"] = htm
 
         # флаг, что сошлись библиотечный и рукописный переходы
-        self.mx_datapack["http"] = f"${int(accuracy_of_calculations)}$"
+        self.mx_datapack["http"] = f"${jlatex(accuracy_of_calculations)}$"
 
     def get_datapack(self) -> str:
         return json.dumps(self.mx_datapack)
