@@ -322,7 +322,8 @@
                 }
                 acc += "</table>";
                 acc += `<p>Жорданова форма: ${obj.jordan_matrix}</p>`
-                acc += `<p>Совпадение с рукописной: ${obj.http}</p>`
+                const color = obj.http ? 'green' : 'red';
+                acc += `<p style="color: ${color}">Совпадение с рукописной: ${obj.http}</p>`;
                 return acc;
             }
 
