@@ -1,9 +1,11 @@
-import numpy as np
 import sympy as sp
 
-from .solver_auxilary import *
-import json
+try:
+    from .solver_auxilary import *
+except:
+    from solver_auxilary import *
 
+import json
 
 MX = [
     [0, 1, 0, 0],
@@ -12,6 +14,25 @@ MX = [
     [0, 0, 0, 2],
 ]
 
+"""
+MX = [
+    [0, 1, 0, 0, 0],
+    [0, 0, 1, 1, 0],
+    [-1, -1, 0, 0, -1],
+    [1, 1, 0, 0, 1],
+    [0, -1, 0, 0, 0],
+]
+"""
+"""
+MX = [
+    [0, 0, 1, -1, 0, 1],
+    [1, 0, -3, 1, -1, -3],
+    [0, 1, 3, 0, 1, 2],
+    [0, 0, 0, 0, 0, 1],
+    [0, 0, 0, 1, 0, -3],
+    [0, 0, 0, 0, 1, 3]
+]
+"""
 
 
 class Solver:
@@ -27,9 +48,8 @@ class Solver:
     def processing_of_eigenvalues(self, e):
         proper_value, algebraic_multiplicity, eigenvectors = e
 
-        b = np.array(
-            self.matrix - proper_value * np.eye(self.matrix.shape[0]), dtype=np.int32
-        )
+        n = self.matrix.rows
+        b = self.matrix - proper_value * sp.eye(n)
         label_vectors, vectors_info = searching_Jordan_cell_vectors(
             b, algebraic_multiplicity
         )
@@ -39,38 +59,40 @@ class Solver:
 
         return {
             "proper_value": jlatex(proper_value),
-            "algebraic_multiplicity": jlatex(algebraic_multiplicity),  # размер J(e.v.)
+            "algebraic_multiplicity": jlatex(algebraic_multiplicity),
             "eigenvectors": [jlatex(v) for v in eigenvectors],
             "B": vectors_info,
             "ladder": ladder_info,
-            "cels_sizes": jlatex(np.array(cels_sizes, dtype=np.int32)),
+            "cels_sizes": jlatex(cels_sizes),
             "cels": jcels,
             "transition_matrix": get_transition_matrix,
         }
 
     def process(self, mx):
-        self.matrix = np.array(mx, dtype=np.int32)
+        self.matrix = sp.Matrix(mx)
         self.clear_datapack()
 
         mx_sp = sp.Matrix(self.matrix)
-        handmade_transition_matrix = []
+        handmade_vectors = []
 
         eigvecs = mx_sp.eigenvects()
         for e in eigvecs:
             ev_data = self.processing_of_eigenvalues(e)
             self.mx_datapack["eigenvalues"].append(ev_data)
-            handmade_transition_matrix += ev_data["transition_matrix"]
-            ev_data["transition_matrix"] = [
-                jlatex(i) for i in ev_data["transition_matrix"]
-            ]
+            handmade_vectors += ev_data["transition_matrix"]
+            ev_data["transition_matrix"] = [jlatex(i) for i in ev_data["transition_matrix"]]
 
         P, J = mx_sp.jordan_form()
+
+        if handmade_vectors:
+            P_handmade = sp.Matrix.hstack(*handmade_vectors)
+        else:
+            P_handmade = sp.eye(self.matrix.rows)
+
         htm = jlatex(
-            sp.Matrix(np.array(handmade_transition_matrix, dtype=np.int32).T.tolist())
+            sp.Matrix(P_handmade).T
         )
-        accuracy_of_calculations = check(
-            self.matrix, handmade_transition_matrix, J
-        )
+        accuracy_of_calculations = check(self.matrix, P_handmade, J)
 
         self.mx_datapack["eigenvalues_count"] = len(eigvecs)
         self.mx_datapack["jordan_matrix"] = jlatex(J)
@@ -78,7 +100,7 @@ class Solver:
         self.mx_datapack["handmade_transition_matrix"] = htm
 
         # флаг, что сошлись библиотечный и рукописный переходы
-        self.mx_datapack["http"] = f"${jlatex(accuracy_of_calculations)}$"
+        self.mx_datapack["http"] = f"${accuracy_of_calculations}$"
 
     def get_datapack(self) -> str:
         return json.dumps(self.mx_datapack)

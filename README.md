@@ -1,7 +1,15 @@
-# Program that enables you to calculate matrices' jordan forms & jordan basis
+# Jordan solver
+
+Program that enables you to calculate matrices' jordan forms & jordan basis
+
+
+### FEATURES
+* Jordan Matrix Search
+* The search for a Jordan basis
+* Making a ladder
+* The console version is in backend folder
 
 ### BUILD
-
 ```bash
 git clone https://github.com/xmart1n/jordansolver
 cd jordansolver
