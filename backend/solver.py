@@ -59,7 +59,7 @@ class Solver:
 
         return {
             "proper_value": jlatex(proper_value),
-            "algebraic_multiplicity": jlatex(algebraic_multiplicity),  # размер J(e.v.)
+            "algebraic_multiplicity": jlatex(algebraic_multiplicity),
             "eigenvectors": [jlatex(v) for v in eigenvectors],
             "B": vectors_info,
             "ladder": ladder_info,
@@ -85,7 +85,7 @@ class Solver:
         P, J = mx_sp.jordan_form()
 
         if handmade_vectors:
-            P_handmade = sp.Matrix.hstack(*handmade_vectors)  # столбцы
+            P_handmade = sp.Matrix.hstack(*handmade_vectors)
         else:
             P_handmade = sp.eye(self.matrix.rows)
 

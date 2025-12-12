@@ -24,7 +24,6 @@ def searching_Jordan_cell_vectors(base_mx: sp.Matrix, target):
         for v in ev:
             vectors_set = gluing_values + [v]
 
-            # используем уже написанную проверку независимости
             if is_linearly_independent(vectors_set):
                 proper_values[-1].append(v)
                 printable[-1]["vectors"].append(jlatex(v))
@@ -50,7 +49,7 @@ def is_linearly_independent(vectors):
     vectors = [sp.Matrix(v) for v in vectors]
     if not vectors:
         return True
-    M = sp.Matrix.hstack(*vectors)  # столбцы — наши векторы
+    M = sp.Matrix.hstack(*vectors)
     return M.rank() == M.cols
 
 
